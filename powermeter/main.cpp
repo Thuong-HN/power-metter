@@ -11,25 +11,29 @@ QByteArray readSerial();
 float getDatafromAddr(QByteArray data, uint16_t addr);
 void sendServer(QByteArray bytearr);
 
-const char port[]="COM15";
+const char port[]="/dev/ttyUSB0";
 
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+    //Liet ke nhung port dang co
     foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
         qDebug() << info.portName() << ":"  << info.description();
     }
 
+    //Vong lap loop
     while(1){
+        //Doc du lieu tu Serial
         QByteArray serialData = readSerial();
+        //Kiem tra neu co du lieu thi gui len Server
         if( serialData != NULL )
         {
             //qDebug() << serialData.toHex();
 
             sendServer(serialData);
         }
-
+        //Ngu 3s
         Sleep(3000);
     }
 
@@ -105,9 +109,10 @@ float getDatafromAddr(QByteArray data, uint16_t addr)
 }
 
 void sendServer(QByteArray bytearr)
-{    
+{
+    //Khai bao domain
     //QNetworkRequest request(QUrl( QString("http://ip.jsontest.com/") ));
-    QNetworkRequest request(QUrl( QString("http://datn2017.000webhostapp.com/triet-1.php") ));
+    QNetworkRequest request(QUrl( QString("http://datnnam.000webhostapp.com/hau.php") ));
     //request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 
@@ -127,7 +132,9 @@ void sendServer(QByteArray bytearr)
     qDebug() << "Json String\n" << QJsonDocument(json).toJson();
     */
 
+    //Chen du lieu vao chuoi, dinh dang Json vao query
     QUrlQuery query;
+    //DInh dang Tendulieu, du lieu
     query.addQueryItem("tag", "espup");
     query.addQueryItem("email", "datn@gmail.com");
     query.addQueryItem("kwh1", QString::number(getDatafromAddr(bytearr, 3911)));
@@ -136,12 +143,15 @@ void sendServer(QByteArray bytearr)
     query.addQueryItem("kwh4", QString::number(getDatafromAddr(bytearr, 3961)));
     qDebug() << "Query String\n" << query.query(QUrl::FullyEncoded).toUtf8();
 
+    //Khai bao doi tuong quan ly mang
     QNetworkAccessManager mgr;
     qDebug() << "Post to Server...";
     //QNetworkReply *reply = mgr.post(request, QJsonDocument(json).toJson());
+    //Gui di bang POST
     QNetworkReply *reply = mgr.post(request, query.query(QUrl::FullyEncoded).toUtf8());
 
-    while(!reply->isFinished()) qApp->processEvents();
+    //Cho den khi hoan thanh
+    while(!reply->isFinished()) qApp->processEvents();//Van cho cac tien trinh khac hoat dong bthuong
 
     if (reply->error() == QNetworkReply::NoError) {
         qDebug() << "success";
